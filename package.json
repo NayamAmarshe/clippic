@@ -6,9 +6,13 @@
     "start": "next start"
   },
   "dependencies": {
+    "fabricjs-react": "^1.0.8",
+    "konva": "^8.3.0",
     "next": "latest",
     "react": "^17.0.2",
-    "react-dom": "^17.0.2"
+    "react-dom": "^17.0.2",
+    "react-konva": "^17.0.2-5",
+    "use-image": "^1.0.8"
   },
   "devDependencies": {
     "autoprefixer": "^10.2.6",
