@@ -1,16 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { Stage, Layer, Image, Transformer } from "react-konva";
 
-const URLImage = ({ src, x, y, selected, mouseY, mouseX, key }) => {
+const URLImage = ({
+  id,
+  src,
+  x,
+  y,
+  selectedId,
+  mouseY,
+  mouseX,
+  images,
+  setImages,
+}) => {
   const imageRef = useRef(null);
   const [image, setImage] = useState(null);
   const [xPos, setXPos] = useState(x);
   const [yPos, setYPos] = useState(y);
+  const [selected, setSelected] = useState(null);
 
   const updateLocation = (e) => {
     // onDrag -> Set position of image
+    setImages({ ...images, [id]: { x: xPos, y: yPos } });
     setXPos(e.target.attrs.x);
     setYPos(e.target.attrs.y);
+    setSelected(selectedId);
   };
 
   const loadImage = () => {
@@ -18,7 +31,6 @@ const URLImage = ({ src, x, y, selected, mouseY, mouseX, key }) => {
     const img = new window.Image();
     // set the src from the props
     img.src = src;
-    img.crossOrigin = "Anonymous";
     setXPos(mouseX);
     setYPos(mouseY);
     // set the imageRef current DOM element to the new Image object
@@ -50,26 +62,29 @@ const URLImage = ({ src, x, y, selected, mouseY, mouseX, key }) => {
 
   return (
     <Image
-      stroke="gray"
-      strokeWidth="10"
+      stroke="white"
+      strokeWidth={id == selected ? 10 : 0}
       x={xPos}
       y={yPos}
       image={image}
       onDragMove={updateLocation}
+      onDragEnd={() => {
+        setSelected(null);
+      }}
+      isSelected={id == selected}
       draggable
     />
   );
 };
 
 export default function Fabric() {
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState({});
   const [mouseX, setMouseX] = useState(0);
   const [mouseY, setMouseY] = useState(0);
   const [stageScale, setStageScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({
     x: 0,
     y: 0,
-    selected: false,
   });
 
   const handlePaste = (e) => {
@@ -88,20 +103,19 @@ export default function Fabric() {
     e.stopPropagation();
     const file = e.dataTransfer.files[0];
     var url = URL.createObjectURL(file);
-    console.log(url);
-    setImages([
+    const selectedId = Object.keys(images).length + 1;
+    setImages({
       ...images,
-      {
+      [selectedId]: {
         src: url,
         x: (mouseX - stagePosition.x) / stageScale,
         y: (mouseY - stagePosition.y) / stageScale,
       },
-    ]);
+    });
   };
 
   const handleMouseMove = (e) => {
     const stage = e.target.getStage();
-    console.log(stage.getRelativePointerPosition());
     setMouseX(stage.getRelativePointerPosition().x);
     setMouseY(stage.getRelativePointerPosition().y);
   };
@@ -128,7 +142,9 @@ export default function Fabric() {
     });
   };
 
-  const handleClick = (e) => {};
+  const handleDragMove = (e) => {};
+
+  const handleClick = (e, index) => {};
 
   return (
     <div
@@ -138,6 +154,7 @@ export default function Fabric() {
       onPaste={handlePaste}
     >
       <Stage
+        className="bg-gray-700 transition-all duration-500 ease-in-out"
         scaleX={stageScale}
         scaleY={stageScale}
         x={stagePosition.x}
@@ -148,21 +165,24 @@ export default function Fabric() {
         preventDefault={false}
         onWheel={handleWheel}
         onPaste={handlePaste}
+        onDragMove={handleDragMove}
         draggable
       >
         <Layer preventDefault={false}>
-          {images.length > 0 &&
-            images.map((image, index) => {
+          {Object.keys(images).length > 0 &&
+            Object.keys(images).map((key, index) => {
               return (
                 <URLImage
-                  onClick={(index) => handleClick(e, index)}
                   key={index}
-                  src={image.src}
-                  x={image.x}
-                  y={image.y}
+                  id={index + 1}
+                  src={images[key].src}
+                  x={images[key].x}
+                  y={images[key].y}
                   mouseX={mouseX}
                   mouseY={mouseY}
-                  selected={image.selected}
+                  selectedId={key}
+                  images={images}
+                  setImages={setImages}
                 />
               );
             })}
