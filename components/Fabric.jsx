@@ -11,12 +11,13 @@ const URLImage = ({
   mouseX,
   images,
   setImages,
+  selected,
+  setSelected,
 }) => {
   const imageRef = useRef(null);
   const [image, setImage] = useState(null);
   const [xPos, setXPos] = useState(x);
   const [yPos, setYPos] = useState(y);
-  const [selected, setSelected] = useState(null);
 
   const updateLocation = (e) => {
     // onDrag -> Set position of image
@@ -86,7 +87,7 @@ export default function Fabric() {
     x: 0,
     y: 0,
   });
-
+  const [selected, setSelected] = useState(null);
   const handlePaste = (e) => {
     console.log("HELLO!");
   };
@@ -116,6 +117,9 @@ export default function Fabric() {
 
   const handleMouseMove = (e) => {
     const stage = e.target.getStage();
+    if (e.target === stage) {
+      setSelected(null);
+    }
     setMouseX(stage.getRelativePointerPosition().x);
     setMouseY(stage.getRelativePointerPosition().y);
   };
@@ -166,6 +170,7 @@ export default function Fabric() {
         onWheel={handleWheel}
         onPaste={handlePaste}
         onDragMove={handleDragMove}
+        onTouchStart={handleMouseMove}
         draggable
       >
         <Layer preventDefault={false}>
@@ -183,6 +188,8 @@ export default function Fabric() {
                   selectedId={key}
                   images={images}
                   setImages={setImages}
+                  selected={selected}
+                  setSelected={setSelected}
                 />
               );
             })}
