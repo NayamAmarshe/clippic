@@ -13,17 +13,21 @@ const URLImage = ({
   setImages,
   selected,
   setSelected,
+  isSelected,
 }) => {
   const imageRef = useRef(null);
+  const trRef = useRef();
   const [image, setImage] = useState(null);
   const [xPos, setXPos] = useState(x);
   const [yPos, setYPos] = useState(y);
 
+  const handleClick = (e) => {};
+
   const updateLocation = (e) => {
     // onDrag -> Set position of image
-    setImages({ ...images, [id]: { x: xPos, y: yPos } });
     setXPos(e.target.attrs.x);
     setYPos(e.target.attrs.y);
+    setImages({ ...images, [id]: { x: xPos, y: yPos } });
     setSelected(selectedId);
   };
 
@@ -61,20 +65,50 @@ const URLImage = ({
     loadImage();
   }, [src]);
 
+  useEffect(() => {
+    if (isSelected) {
+      trRef.current.nodes([imageRef.current]);
+      // trRef.current.getLayer().batchDraw();
+    }
+  }, [isSelected]);
+
   return (
-    <Image
-      stroke="white"
-      strokeWidth={id == selected ? 10 : 0}
-      x={xPos}
-      y={yPos}
-      image={image}
-      onDragMove={updateLocation}
-      onDragEnd={() => {
-        setSelected(null);
-      }}
-      isSelected={id == selected}
-      draggable
-    />
+    <>
+      <Image
+        stroke="white"
+        strokeWidth={id == selected ? 10 : 0}
+        x={xPos}
+        y={yPos}
+        image={image}
+        onDragMove={updateLocation}
+        onDragEnd={() => {
+          // setSelected(null);
+        }}
+        onClick={handleClick}
+        onTransformEnd={(e) => {
+          const node = shapeRef.current;
+          const scaleX = node.scaleX();
+          const scaleY = node.scaleY();
+
+          // we will reset it back
+          node.scaleX(1);
+          node.scaleY(1);
+        }}
+        draggable
+      />
+      {isSelected && (
+        <Transformer
+          ref={trRef}
+          boundBoxFunc={(oldBox, newBox) => {
+            // limit resize
+            if (newBox.width < 5 || newBox.height < 5) {
+              return oldBox;
+            }
+            return newBox;
+          }}
+        />
+      )}
+    </>
   );
 };
 
@@ -117,9 +151,9 @@ export default function Fabric() {
 
   const handleMouseMove = (e) => {
     const stage = e.target.getStage();
-    if (e.target === stage) {
-      setSelected(null);
-    }
+    // if (e.target === stage) {
+    //   setSelected(null);
+    // }
     setMouseX(stage.getRelativePointerPosition().x);
     setMouseY(stage.getRelativePointerPosition().y);
   };
@@ -148,7 +182,9 @@ export default function Fabric() {
 
   const handleDragMove = (e) => {};
 
-  const handleClick = (e, index) => {};
+  const handleClick = (e, index) => {
+    setSelected(null);
+  };
 
   return (
     <div
@@ -171,6 +207,7 @@ export default function Fabric() {
         onPaste={handlePaste}
         onDragMove={handleDragMove}
         onTouchStart={handleMouseMove}
+        onClick={handleClick}
         draggable
       >
         <Layer preventDefault={false}>
@@ -190,6 +227,7 @@ export default function Fabric() {
                   setImages={setImages}
                   selected={selected}
                   setSelected={setSelected}
+                  isSelected={index + 1 == selected}
                 />
               );
             })}
