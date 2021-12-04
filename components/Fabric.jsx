@@ -6,7 +6,7 @@ const URLImage = ({
   src,
   x,
   y,
-  selectedId,
+  mapId,
   mouseY,
   mouseX,
   images,
@@ -16,19 +16,22 @@ const URLImage = ({
   isSelected,
 }) => {
   const imageRef = useRef(null);
-  const trRef = useRef();
   const [image, setImage] = useState(null);
   const [xPos, setXPos] = useState(x);
   const [yPos, setYPos] = useState(y);
 
-  const handleClick = (e) => {};
+  const handleClick = (e) => {
+    setSelected(mapId);
+    console.log("Selected Hashmap ID: ", selected);
+    console.log("key in map loop: ", id);
+  };
 
   const updateLocation = (e) => {
     // onDrag -> Set position of image
     setXPos(e.target.attrs.x);
     setYPos(e.target.attrs.y);
     setImages({ ...images, [id]: { x: xPos, y: yPos } });
-    setSelected(selectedId);
+    setSelected(mapId);
   };
 
   const loadImage = () => {
@@ -65,13 +68,6 @@ const URLImage = ({
     loadImage();
   }, [src]);
 
-  useEffect(() => {
-    if (isSelected) {
-      trRef.current.nodes([imageRef.current]);
-      // trRef.current.getLayer().batchDraw();
-    }
-  }, [isSelected]);
-
   return (
     <>
       <Image
@@ -81,33 +77,9 @@ const URLImage = ({
         y={yPos}
         image={image}
         onDragMove={updateLocation}
-        onDragEnd={() => {
-          // setSelected(null);
-        }}
         onClick={handleClick}
-        onTransformEnd={(e) => {
-          const node = shapeRef.current;
-          const scaleX = node.scaleX();
-          const scaleY = node.scaleY();
-
-          // we will reset it back
-          node.scaleX(1);
-          node.scaleY(1);
-        }}
         draggable
       />
-      {isSelected && (
-        <Transformer
-          ref={trRef}
-          boundBoxFunc={(oldBox, newBox) => {
-            // limit resize
-            if (newBox.width < 5 || newBox.height < 5) {
-              return oldBox;
-            }
-            return newBox;
-          }}
-        />
-      )}
     </>
   );
 };
@@ -173,17 +145,30 @@ export default function Fabric() {
     setMouseY(mousePointTo.y);
 
     const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
-    setStageScale(newScale);
-    setStagePosition({
-      x: -(mousePointTo.x - stage.getPointerPosition().x / newScale) * newScale,
-      y: -(mousePointTo.y - stage.getPointerPosition().y / newScale) * newScale,
-    });
+    if (newScale < 10 && newScale > 0.1) {
+      setStageScale(newScale);
+      setStagePosition({
+        x:
+          -(mousePointTo.x - stage.getPointerPosition().x / newScale) *
+          newScale,
+        y:
+          -(mousePointTo.y - stage.getPointerPosition().y / newScale) *
+          newScale,
+      });
+    }
+    console.log(newScale);
   };
 
   const handleDragMove = (e) => {};
 
   const handleClick = (e, index) => {
-    setSelected(null);
+    if (e.target.className != "Image") {
+      setSelected(null);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    console.log(e);
   };
 
   return (
@@ -192,6 +177,8 @@ export default function Fabric() {
       onDragOver={onDragOver}
       onDrop={onFileDrop}
       onPaste={handlePaste}
+      onKeyDown={handleKeyDown}
+      onKeyPress={handleKeyDown}
     >
       <Stage
         className="bg-gray-700 transition-all duration-500 ease-in-out"
@@ -208,6 +195,7 @@ export default function Fabric() {
         onDragMove={handleDragMove}
         onTouchStart={handleMouseMove}
         onClick={handleClick}
+        onKeyDown={handleKeyDown}
         draggable
       >
         <Layer preventDefault={false}>
@@ -222,7 +210,7 @@ export default function Fabric() {
                   y={images[key].y}
                   mouseX={mouseX}
                   mouseY={mouseY}
-                  selectedId={key}
+                  mapId={key}
                   images={images}
                   setImages={setImages}
                   selected={selected}
