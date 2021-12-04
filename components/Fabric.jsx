@@ -22,8 +22,6 @@ const URLImage = ({
 
   const handleClick = (e) => {
     setSelected(mapId);
-    console.log("Selected Hashmap ID: ", selected);
-    console.log("key in map loop: ", id);
   };
 
   const updateLocation = (e) => {
@@ -84,6 +82,8 @@ const URLImage = ({
   );
 };
 
+// ------------ MAIN FUNCTIOn -----------
+
 export default function Fabric() {
   const [images, setImages] = useState({});
   const [mouseX, setMouseX] = useState(0);
@@ -115,8 +115,8 @@ export default function Fabric() {
       ...images,
       [selectedId]: {
         src: url,
-        x: (mouseX - stagePosition.x) / stageScale,
-        y: (mouseY - stagePosition.y) / stageScale,
+        x: mouseX,
+        y: mouseY,
       },
     });
   };
@@ -126,6 +126,7 @@ export default function Fabric() {
     // if (e.target === stage) {
     //   setSelected(null);
     // }
+
     setMouseX(stage.getRelativePointerPosition().x);
     setMouseY(stage.getRelativePointerPosition().y);
   };
@@ -156,10 +157,16 @@ export default function Fabric() {
           newScale,
       });
     }
-    console.log(newScale);
   };
 
-  const handleDragMove = (e) => {};
+  const handleDragMove = (e) => {
+    const stage = e.target.getStage();
+    setStagePosition({
+      x: stage.attrs.x,
+      y: stage.attrs.y,
+    });
+    // console.log(stage.attrs.x, stage.attrs.y);
+  };
 
   const handleClick = (e, index) => {
     if (e.target.className != "Image") {
@@ -168,8 +175,47 @@ export default function Fabric() {
   };
 
   const handleKeyDown = (e) => {
-    console.log(e);
+    const { keyCode } = e;
+    console.log(e.code);
+    // F - keyCode 70
+    if (keyCode === 70) {
+      if (Object.keys(images).length > 0) {
+        const x = images[1].x;
+        const y = images[1].y;
+        setStagePosition({
+          x: x - window.innerWidth / 2,
+          y: y - window.innerHeight / 2,
+        });
+      } else {
+        setStagePosition({
+          x: 0,
+          y: 0,
+        });
+      }
+      setStageScale(1);
+    }
   };
+
+  // useEffect(() => {
+  //   console.log("Scale: ", stageScale.toFixed(2));
+  //   console.log(
+  //     "stagePosition: ",
+  //     Math.floor(stagePosition.x),
+  //     Math.floor(stagePosition.y)
+  //   );
+  //   if (Object.keys(images).length > 0) {
+  //     console.log(
+  //       "Image: ",
+  //       Math.floor(images[1].x - window.innerWidth / 2),
+  //       Math.floor(images[1].y - window.innerHeight / 2)
+  //     );
+  //   }
+  //   console.log(
+  //     "SCREEN MID: ",
+  //     Math.floor(window.innerWidth / 2),
+  //     Math.floor(window.innerHeight / 2)
+  //   );
+  // }, [stageScale, stagePosition, images]);
 
   return (
     <div
@@ -177,8 +223,8 @@ export default function Fabric() {
       onDragOver={onDragOver}
       onDrop={onFileDrop}
       onPaste={handlePaste}
+      tabIndex={1}
       onKeyDown={handleKeyDown}
-      onKeyPress={handleKeyDown}
     >
       <Stage
         className="bg-gray-700 transition-all duration-500 ease-in-out"
