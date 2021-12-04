@@ -23,6 +23,7 @@ const URLImage = ({
 
   const handleClick = (e) => {
     setSelected(mapId);
+    console.log("Clicked Image position: ", images[mapId].x, images[mapId].y);
   };
 
   const updateLocation = (e) => {
@@ -121,6 +122,12 @@ export default function Fabric() {
     const file = e.dataTransfer.files[0];
     var url = URL.createObjectURL(file);
     const selectedId = Object.keys(images).length + 1;
+    console.log("Image dropped at : ", pointerPosition.x, pointerPosition.y);
+    console.log(
+      "Stage Position at Drop : ",
+      stageRef.current.x(),
+      stageRef.current.y()
+    );
     setImages({
       ...images,
       [selectedId]: {
@@ -136,6 +143,17 @@ export default function Fabric() {
     // if (e.target === stage) {
     //   setSelected(null);
     // }
+    console.log(
+      "Pointer Position: ",
+      stage.getPointerPosition().x / stageScale - stage.x() / stageScale,
+      stage.getPointerPosition().y / stageScale - stage.y() / stageScale
+    );
+    // console.log(
+    //   "Relative Pointer Position: ",
+    //   stage.getRelativePointerPosition().x,
+    //   stage.getRelativePointerPosition().y
+    // );
+    console.log("Stage Position: ", stage.x(), stage.y());
 
     setMouseX(stage.getRelativePointerPosition().x);
     setMouseY(stage.getRelativePointerPosition().y);
@@ -147,7 +165,9 @@ export default function Fabric() {
     const scaleBy = 1.11;
     const stage = e.target.getStage();
     const oldScale = stage.scaleX();
+
     const mousePointTo = {
+      // absolute position. from the viewpoint of original stage's position
       x: stage.getPointerPosition().x / oldScale - stage.x() / oldScale,
       y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale,
     };
@@ -170,10 +190,11 @@ export default function Fabric() {
   };
 
   const handleDragMove = (e) => {
-    const stage = e.target.getStage();
+    const stage = stageRef.current;
+
     setStagePosition({
-      x: stage.attrs.x,
-      y: stage.attrs.y,
+      x: stage.x(),
+      y: stage.y(),
     });
     // console.log(stage.attrs.x, stage.attrs.y);
   };
@@ -186,15 +207,19 @@ export default function Fabric() {
 
   const handleKeyDown = (e) => {
     const { keyCode } = e;
+    const stage = stageRef.current;
     console.log(e.code);
     // F - keyCode 70
     if (keyCode === 70) {
+      setStageScale(1);
       if (Object.keys(images).length > 0) {
-        const x = images[1].x;
-        const y = images[1].y;
+        const x = images[1].x - stage.x();
+        const y = images[1].y - stage.y();
+        // console.log("Image: ", x, y);
+        // console.log("Stage: ", stagePosition.x, stagePosition.y);
         setStagePosition({
-          x: images[1].x,
-          y: images[1].y,
+          x,
+          y,
         });
       } else {
         setStagePosition({
@@ -202,29 +227,28 @@ export default function Fabric() {
           y: 0,
         });
       }
-      setStageScale(1);
     }
   };
 
   useEffect(() => {
-    console.log("Scale: ", stageScale.toFixed(2));
-    console.log(
-      "stagePosition: ",
-      Math.floor(stagePosition.x),
-      Math.floor(stagePosition.y)
-    );
-    if (Object.keys(images).length > 0) {
-      console.log(
-        "Image: ",
-        Math.floor(images[1].x - window.innerWidth / 2),
-        Math.floor(images[1].y - window.innerHeight / 2)
-      );
-    }
-    console.log(
-      "SCREEN MID: ",
-      Math.floor(window.innerWidth / 2),
-      Math.floor(window.innerHeight / 2)
-    );
+    // console.log("Scale: ", stageScale.toFixed(2));
+    // console.log(
+    //   "stagePosition: ",
+    //   Math.floor(stagePosition.x),
+    //   Math.floor(stagePosition.y)
+    // );
+    // if (Object.keys(images).length > 0) {
+    //   console.log(
+    //     "Image: ",
+    //     Math.floor(images[1].x - window.innerWidth / 2),
+    //     Math.floor(images[1].y - window.innerHeight / 2)
+    //   );
+    // }
+    // console.log(
+    //   "SCREEN MID: ",
+    //   Math.floor(window.innerWidth / 2),
+    //   Math.floor(window.innerHeight / 2)
+    // );
   }, [stageScale, stagePosition, images]);
 
   useEffect(() => {
