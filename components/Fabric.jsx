@@ -14,6 +14,7 @@ const URLImage = ({
   selected,
   setSelected,
   isSelected,
+  stageScale,
 }) => {
   const imageRef = useRef(null);
   const [image, setImage] = useState(null);
@@ -25,9 +26,15 @@ const URLImage = ({
   };
 
   const updateLocation = (e) => {
+    console.log(
+      "Image e.target.x(): ",
+      Math.floor(e.target.x()),
+      "e.target.y(): ",
+      Math.floor(e.target.y())
+    );
     // onDrag -> Set position of image
-    setXPos(e.target.attrs.x);
-    setYPos(e.target.attrs.y);
+    setXPos(e.target.x());
+    setYPos(e.target.y());
     setImages({ ...images, [id]: { x: xPos, y: yPos } });
     setSelected(mapId);
   };
@@ -94,6 +101,8 @@ export default function Fabric() {
     y: 0,
   });
   const [selected, setSelected] = useState(null);
+  const stageRef = useRef(null);
+
   const handlePaste = (e) => {
     console.log("HELLO!");
   };
@@ -108,6 +117,7 @@ export default function Fabric() {
   const onFileDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    const pointerPosition = stageRef.current.getRelativePointerPosition();
     const file = e.dataTransfer.files[0];
     var url = URL.createObjectURL(file);
     const selectedId = Object.keys(images).length + 1;
@@ -115,8 +125,8 @@ export default function Fabric() {
       ...images,
       [selectedId]: {
         src: url,
-        x: mouseX,
-        y: mouseY,
+        x: pointerPosition.x,
+        y: pointerPosition.y,
       },
     });
   };
@@ -183,8 +193,8 @@ export default function Fabric() {
         const x = images[1].x;
         const y = images[1].y;
         setStagePosition({
-          x: x - window.innerWidth / 2,
-          y: y - window.innerHeight / 2,
+          x: images[1].x,
+          y: images[1].y,
         });
       } else {
         setStagePosition({
@@ -196,26 +206,30 @@ export default function Fabric() {
     }
   };
 
-  // useEffect(() => {
-  //   console.log("Scale: ", stageScale.toFixed(2));
-  //   console.log(
-  //     "stagePosition: ",
-  //     Math.floor(stagePosition.x),
-  //     Math.floor(stagePosition.y)
-  //   );
-  //   if (Object.keys(images).length > 0) {
-  //     console.log(
-  //       "Image: ",
-  //       Math.floor(images[1].x - window.innerWidth / 2),
-  //       Math.floor(images[1].y - window.innerHeight / 2)
-  //     );
-  //   }
-  //   console.log(
-  //     "SCREEN MID: ",
-  //     Math.floor(window.innerWidth / 2),
-  //     Math.floor(window.innerHeight / 2)
-  //   );
-  // }, [stageScale, stagePosition, images]);
+  useEffect(() => {
+    console.log("Scale: ", stageScale.toFixed(2));
+    console.log(
+      "stagePosition: ",
+      Math.floor(stagePosition.x),
+      Math.floor(stagePosition.y)
+    );
+    if (Object.keys(images).length > 0) {
+      console.log(
+        "Image: ",
+        Math.floor(images[1].x - window.innerWidth / 2),
+        Math.floor(images[1].y - window.innerHeight / 2)
+      );
+    }
+    console.log(
+      "SCREEN MID: ",
+      Math.floor(window.innerWidth / 2),
+      Math.floor(window.innerHeight / 2)
+    );
+  }, [stageScale, stagePosition, images]);
+
+  useEffect(() => {
+    console.log(stageRef.current);
+  }, []);
 
   return (
     <div
@@ -242,6 +256,7 @@ export default function Fabric() {
         onTouchStart={handleMouseMove}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
+        ref={stageRef}
         draggable
       >
         <Layer preventDefault={false}>
@@ -262,6 +277,7 @@ export default function Fabric() {
                   selected={selected}
                   setSelected={setSelected}
                   isSelected={index + 1 == selected}
+                  stageScale={stageScale}
                 />
               );
             })}
