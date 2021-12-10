@@ -23,21 +23,27 @@ const URLImage = ({
 
   const handleClick = (e) => {
     setSelected(mapId);
-    console.log("Clicked Image position: ", images[mapId].x, images[mapId].y);
+    console.log(imageRef);
   };
 
   const updateLocation = (e) => {
-    console.log(
-      "Image e.target.x(): ",
-      Math.floor(e.target.x()),
-      "e.target.y(): ",
-      Math.floor(e.target.y())
-    );
     // onDrag -> Set position of image
     setXPos(e.target.x());
     setYPos(e.target.y());
-    setImages({ ...images, [id]: { x: xPos, y: yPos } });
+    setImages({
+      ...images,
+      [id]: {
+        x: xPos,
+        y: yPos,
+        height: e.target.getHeight(),
+        width: e.target.getWidth(),
+      },
+    });
+    console.log(images[id]);
     setSelected(mapId);
+    console.group("Image");
+    console.log(e.target.x(), e.target.y());
+    console.groupEnd();
   };
 
   const loadImage = () => {
@@ -51,6 +57,15 @@ const URLImage = ({
     imageRef.current = img;
     // call handleLoad function when DOM element loads
     imageRef.current.addEventListener("load", handleLoad);
+    // setImages({
+    //   ...images,
+    //   [id]: {
+    //     x: xPos,
+    //     y: yPos,
+    //     height: img.getHeight(),
+    //     width: img.getWidth(),
+    //   },
+    // });
   };
 
   const handleLoad = () => {
@@ -78,11 +93,13 @@ const URLImage = ({
     <>
       <Image
         stroke="white"
-        strokeWidth={id == selected ? 10 : 0}
+        ref={imageRef}
+        strokeWidth={id == selected ? 10 / stageScale : 0}
         x={xPos}
         y={yPos}
         image={image}
         onDragMove={updateLocation}
+        onDragEnd={updateLocation}
         onClick={handleClick}
         draggable
       />
@@ -104,9 +121,6 @@ export default function Fabric() {
   const [selected, setSelected] = useState(null);
   const stageRef = useRef(null);
 
-  const handlePaste = (e) => {
-    console.log("HELLO!");
-  };
   const onDragEnter = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -122,12 +136,6 @@ export default function Fabric() {
     const file = e.dataTransfer.files[0];
     var url = URL.createObjectURL(file);
     const selectedId = Object.keys(images).length + 1;
-    console.log("Image dropped at : ", pointerPosition.x, pointerPosition.y);
-    console.log(
-      "Stage Position at Drop : ",
-      stageRef.current.x(),
-      stageRef.current.y()
-    );
     setImages({
       ...images,
       [selectedId]: {
@@ -140,51 +148,28 @@ export default function Fabric() {
 
   const handleMouseMove = (e) => {
     const stage = e.target.getStage();
-    // if (e.target === stage) {
-    //   setSelected(null);
-    // }
-    console.log(
-      "Pointer Position: ",
-      stage.getPointerPosition().x / stageScale - stage.x() / stageScale,
-      stage.getPointerPosition().y / stageScale - stage.y() / stageScale
-    );
-    // console.log(
-    //   "Relative Pointer Position: ",
-    //   stage.getRelativePointerPosition().x,
-    //   stage.getRelativePointerPosition().y
-    // );
-    console.log("Stage Position: ", stage.x(), stage.y());
-
     setMouseX(stage.getRelativePointerPosition().x);
     setMouseY(stage.getRelativePointerPosition().y);
   };
 
   const handleWheel = (e) => {
-    e.evt.preventDefault();
-
-    const scaleBy = 1.11;
     const stage = e.target.getStage();
+    e.evt.preventDefault();
+    const scaleBy = 1.1;
     const oldScale = stage.scaleX();
-
-    const mousePointTo = {
-      // absolute position. from the viewpoint of original stage's position
-      x: stage.getPointerPosition().x / oldScale - stage.x() / oldScale,
-      y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale,
-    };
-
-    setMouseX(mousePointTo.x);
-    setMouseY(mousePointTo.y);
-
     const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+
+    const absolutePointerPosition = stage.getPointerPosition(); // Position in Window
+    const relativePointerPosition = stage.getRelativePointerPosition(); // Relative position of mouse to stage
+
+    setMouseX(absolutePointerPosition.x);
+    setMouseY(absolutePointerPosition.y);
+
     if (newScale < 10 && newScale > 0.1) {
       setStageScale(newScale);
       setStagePosition({
-        x:
-          -(mousePointTo.x - stage.getPointerPosition().x / newScale) *
-          newScale,
-        y:
-          -(mousePointTo.y - stage.getPointerPosition().y / newScale) *
-          newScale,
+        x: absolutePointerPosition.x - relativePointerPosition.x * newScale,
+        y: absolutePointerPosition.y - relativePointerPosition.y * newScale,
       });
     }
   };
@@ -196,7 +181,6 @@ export default function Fabric() {
       x: stage.x(),
       y: stage.y(),
     });
-    // console.log(stage.attrs.x, stage.attrs.y);
   };
 
   const handleClick = (e, index) => {
@@ -208,15 +192,13 @@ export default function Fabric() {
   const handleKeyDown = (e) => {
     const { keyCode } = e;
     const stage = stageRef.current;
-    console.log(e.code);
+    console.log(keyCode);
     // F - keyCode 70
     if (keyCode === 70) {
-      setStageScale(1);
       if (Object.keys(images).length > 0) {
-        const x = images[1].x - stage.x();
-        const y = images[1].y - stage.y();
-        // console.log("Image: ", x, y);
-        // console.log("Stage: ", stagePosition.x, stagePosition.y);
+        setStageScale(1);
+        const x = -images[1].x;
+        const y = -images[1].y;
         setStagePosition({
           x,
           y,
@@ -226,6 +208,12 @@ export default function Fabric() {
           x: 0,
           y: 0,
         });
+      }
+    }
+    // Delete
+    if (keyCode === 46) {
+      if (selected !== null) {
+        console.log(images[selected].imageRef);
       }
     }
   };
@@ -260,7 +248,6 @@ export default function Fabric() {
       onDragEnter={onDragEnter}
       onDragOver={onDragOver}
       onDrop={onFileDrop}
-      onPaste={handlePaste}
       tabIndex={1}
       onKeyDown={handleKeyDown}
     >
@@ -275,7 +262,6 @@ export default function Fabric() {
         onMouseMove={handleMouseMove}
         preventDefault={false}
         onWheel={handleWheel}
-        onPaste={handlePaste}
         onDragMove={handleDragMove}
         onTouchStart={handleMouseMove}
         onClick={handleClick}
