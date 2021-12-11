@@ -212,8 +212,11 @@ export default function Fabric() {
     }
     // Delete
     if (keyCode === 46) {
+      console.log(selected);
       if (selected !== null) {
-        console.log(images[selected].imageRef);
+        let mp = images;
+        delete mp[selected];
+        setImages(mp);
       }
     }
   };
